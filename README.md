@@ -11,6 +11,8 @@ This is a lightweight and user-friendly Note-Making Web App built using Python (
 
 📆 Shows created date & time
 
+💾 Stores notes using a JSON file (notes.json)
+
 🎨 Beautiful and minimal UI using CSS
 
 🔄 Live updates (page refresh shows updated notes)
@@ -19,5 +21,7 @@ This is a lightweight and user-friendly Note-Making Web App built using Python (
 Frontend: HTML, CSS
 
 Backend: Python (Flask)
+
+Storage: notes.json (local JSON file as a database)
 
 "Thank you for visiting this page. Keep building, keep learning!"
