@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpesh Maradiya</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Include confetti library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <h1>Notes</h1>
+    <form method="POST" class="add-note-form" id="add-note-form">
+        <textarea name="note" placeholder="Write your note here..." required></textarea>
+        <button type="submit">Add Note</button>
+    </form>
+    <div id="notes">
+        {% for note in notes %}
+            <div class="note {{ note.color }}" id="note-{{ note.id }}" data-tilt="{{ -5 if note.id % 2 == 0 else 5 }}">
+                <div class="note-content">{{ note.content }}</div>
+                <div class="note-timestamp">Created: {{ note.timestamp }}</div>
+                <div class="note-actions">
+                    <button onclick="showEditForm({{ note.id }})" class="edit-btn">Edit</button>
+                    <a href="{{ url_for('delete_note', note_id=note.id) }}" class="delete-btn">Delete</a>
+                </div>
+                <form id="edit-form-{{ note.id }}" class="edit-form" method="POST" action="{{ url_for('edit_note', note_id=note.id) }}" style="display: none;">
+                    <textarea name="new_content" required>{{ note.content }}</textarea>
+                    <button type="submit">Save</button>
+                    <button type="button" onclick="hideEditForm({{ note.id }})">Cancel</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function showEditForm(noteId) {
+            document.getElementById(`edit-form-${noteId}`).style.display = 'block';
+            document.querySelector(`#edit-form-${noteId}`).previousElementSibling.style.display = 'none';
+        }
+
+        function hideEditForm(noteId) {
+            document.getElementById(`edit-form-${noteId}`).style.display = 'none';
+            document.querySelector(`#edit-form-${noteId}`).previousElementSibling.style.display = 'block';
+        }
+
+        // Dragging functionality with structured initial placement
+        const notes = document.querySelectorAll('.note');
+        const noteWidth = 270; // Width of a note (250px + padding/margins)
+        const noteHeight = 190; // Height of a note (150px + padding/margins)
+        const margin = 20; // Margin between notes
+        const notesPerRow = Math.floor((window.innerWidth - margin) / (noteWidth + margin)); // Calculate how many notes fit per row
+
+        notes.forEach((note, index) => {
+            const noteId = note.id;
+            const positionKey = `position-${noteId}`;
+            const draggedKey = `dragged-${noteId}`;
+            const savedPosition = localStorage.getItem(positionKey);
+            const hasBeenDragged = localStorage.getItem(draggedKey) === 'true';
+
+            // Calculate grid position
+            const row = Math.floor(index / notesPerRow);
+            const col = index % notesPerRow;
+            const top = 150 + row * (noteHeight + margin); // Start below the form (150px offset)
+            const left = margin + col * (noteWidth + margin);
+
+            if (savedPosition && hasBeenDragged) {
+                // Use saved position only if the note has been dragged
+                const { top, left } = JSON.parse(savedPosition);
+                note.style.top = `${top}px`;
+                note.style.left = `${left}px`;
+            } else {
+                // Use calculated grid position
+                note.style.top = `${top}px`;
+                note.style.left = `${left}px`;
+            }
+
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+
+            note.addEventListener('mousedown', startDragging);
+            note.addEventListener('mousemove', drag);
+            note.addEventListener('mouseup', stopDragging);
+            note.addEventListener('mouseleave', stopDragging);
+
+            function startDragging(e) {
+                initialX = e.clientX - currentX;
+                initialY = e.clientY - currentY;
+                isDragging = true;
+                note.style.zIndex = 100;
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    note.style.left = `${currentX}px`;
+                    note.style.top = `${currentY}px`;
+                }
+            }
+
+            function stopDragging() {
+                if (isDragging) {
+                    isDragging = false;
+                    note.style.zIndex = 5;
+                    localStorage.setItem(positionKey, JSON.stringify({
+                        top: currentY,
+                        left: currentX
+                    }));
+                    localStorage.setItem(draggedKey, 'true'); // Mark as dragged
+                }
+            }
+        });
+
+        // Confetti and sound effect on note addition
+        document.getElementById('add-note-form').addEventListener('submit', () => {
+            // Trigger confetti
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            // Play sound effect
+            const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3');
+            audio.play().catch(error => console.log('Audio play failed:', error));
+        });
+    </script>
+</body>
+</html>
